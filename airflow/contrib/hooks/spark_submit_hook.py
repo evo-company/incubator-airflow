@@ -157,7 +157,7 @@ class SparkSubmitHook(BaseHook):
             connection_cmd += ["--keytab", self._keytab]
         if self._principal:
             connection_cmd += ["--principal", self._principal]
-        if self._principal:
+        if self._proxy_user:
             connection_cmd += ["--proxy-user", self._proxy_user]
         if self._name:
             connection_cmd += ["--name", self._name]
