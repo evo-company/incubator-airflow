@@ -46,6 +46,8 @@ class SparkSubmitHook(BaseHook):
     :type keytab: str
     :param principal: The name of the kerberos principal used for keytab
     :type principal: str
+    :param proxy_user: User to impersonate when submitting the application
+    :type proxy_user: str
     :param name: Name of the job (default airflow-spark)
     :type name: str
     :param num_executors: Number of executors to launch
@@ -64,6 +66,7 @@ class SparkSubmitHook(BaseHook):
                  executor_memory=None,
                  keytab=None,
                  principal=None,
+                 proxy_user=None,
                  name='default-name',
                  num_executors=None,
                  verbose=False):
@@ -75,7 +78,6 @@ class SparkSubmitHook(BaseHook):
         self._executor_cores = executor_cores
         self._executor_memory = executor_memory
         self._keytab = keytab
-        self._principal = principal
         self._name = name
         self._num_executors = num_executors
         self._verbose = verbose
@@ -84,6 +86,12 @@ class SparkSubmitHook(BaseHook):
 
         (self._master, self._queue, self._deploy_mode) = self._resolve_connection()
         self._is_yarn = 'yarn' in self._master
+
+        if proxy_user is not None and principal is not None:
+            raise ValueError('Only one of proxy_user or principal can be provided')
+        else:
+            self._principal = principal
+            self._proxy_user = proxy_user
 
     def _resolve_connection(self):
         # Build from connection master or default to yarn if not available
@@ -149,6 +157,8 @@ class SparkSubmitHook(BaseHook):
             connection_cmd += ["--keytab", self._keytab]
         if self._principal:
             connection_cmd += ["--principal", self._principal]
+        if self._principal:
+            connection_cmd += ["--proxy-user", self._proxy_user]
         if self._name:
             connection_cmd += ["--name", self._name]
         if self._verbose:
