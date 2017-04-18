@@ -14,6 +14,7 @@
 #
 
 import unittest
+import copy
 
 from airflow import configuration, models
 from airflow.utils import db
@@ -79,6 +80,21 @@ class TestSparkSubmitHook(unittest.TestCase):
 
         if self._config['verbose']:
             assert "--verbose" in cmd
+
+    def test_proxy_user(self):
+        config = copy.deepcopy(self._config)
+        proxy_user = 'airflow_impersonated'
+        config.update(proxy_user=proxy_user)
+
+        with self.assertRaises(ValueError):
+            SparkSubmitHook(**config)
+
+        del config['principal']
+        hook = SparkSubmitHook(**config)
+        cmd = ' '.join(hook._build_command(self._spark_job_file))
+
+        self.assertIn("--proxy-user {}".format(proxy_user), cmd)
+        self.assertNotIn("--principal", cmd)
 
     def test_submit(self):
         hook = SparkSubmitHook()
